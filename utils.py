@@ -67,11 +67,10 @@ def b128_decode(data):
     while True:
         d = int(data[2 * i:2 * i + 2], 16)
         n = n << 7 | d & 0x7F
-        if d & 0x80:
-            n += 1
-            i += 1
-        else:
+        if not d & 0x80:
             return n
+        n += 1
+        i += 1
 
 
 def parse_b128(utxo, offset=0):
@@ -253,7 +252,9 @@ def decode_utxo_v08_v014(utxo):
 
         # Once the value is parsed, the endianness of the value is switched from LE to BE and the binary representation
         # of the value is checked to identify the non-spent output indexes.
-        bin_data = format(int(change_endianness(bitvector), 16), '0'+str(n*8)+'b')[::-1]
+        bin_data = format(
+            int(change_endianness(bitvector), 16), f'0{str(n * 8)}b'
+        )[::-1]
 
         # Every position (i) with a 1 encodes the index of a non-spent output as i+2, since the two first outs (v[0] and
         # v[1] has been already counted)
@@ -452,7 +453,7 @@ def hash_160_to_btc_address(h160, v):
     # Double sha256.
     h = sha256(sha256(vh160).digest()).digest()
     # Add the two first bytes of the result as a checksum tailing the RIPEMD-160 hash.
-    addr = vh160 + h[0:4]
+    addr = vh160 + h[:4]
     # Obtain the Bitcoin address by Base58 encoding the result
     addr = b58encode(addr)
 
